@@ -1,0 +1,44 @@
+@CHARSET "UTF-8";
+
+.piece-content {
+	fill:white;
+	stroke:none;
+}
+.piece-border {
+	fill:none;
+	stroke:black;
+}
+.piece {
+	cursor:move;
+}
+.assembly-border {
+	fill:mediumseagreen;
+	stroke:black;
+}
+.assembly-content-1 {
+	fill:#cef2ce;
+	stroke:none;
+}
+.assembly-content-2 {
+	fill:none;
+	stroke:black;
+	stroke-width:2;
+}
+.assembly-shadow {
+	fill:none;
+	stroke:gray;
+	stroke-dasharray:6,3;
+}
+.assembly-shadow-selected {
+	fill:lightgray;
+	stroke:gray;
+	stroke-dasharray:6,3;
+}
+.tile-shadow {
+	visibility:hidden;
+}
+.tile-shadow-selected {
+	visibility:visible;
+	fill:lightgray;
+	stroke:gray;
+}

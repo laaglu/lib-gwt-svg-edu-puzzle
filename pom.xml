@@ -18,9 +18,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<url>http://code.google.com/p/vectomatic/source/browse/#svn/lib-gwt-svg-edu-puzzle/trunk</url>
-		<connection>scm:svn:http://vectomatic.googlecode.com/svn/lib-gwt-svg-edu-puzzle/trunk</connection>
-		<developerConnection>scm:svn:file:///home/laaglu/svn/laaglu-svn/lib-gwt-svg-edu-puzzle/trunk</developerConnection>
+		<url>scm:git:git@github.com:laaglu/lib-gwt-svg-edu-puzzle.git</url>
+		<connection>scm:git:git@github.com:laaglu/lib-gwt-svg-edu-puzzle.git</connection>
+		<developerConnection>scm:git:git@github.com:laaglu/lib-gwt-svg-edu-puzzle.git</developerConnection>
 	</scm>
 	<dependencies>
 		<dependency>

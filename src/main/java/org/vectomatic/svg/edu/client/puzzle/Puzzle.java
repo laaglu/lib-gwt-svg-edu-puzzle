@@ -38,6 +38,7 @@ import org.vectomatic.dom.svg.utils.OMSVGParser;
 import org.vectomatic.dom.svg.utils.SVGConstants;
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
 import com.google.gwt.event.dom.client.MouseEvent;
@@ -482,6 +483,8 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		float totalWidth = tileZoneX + tileZoneWidth;
 		float totalHeight = tileZoneHeight;
 		rootSvg.setViewBox(0, 0, totalWidth, totalHeight);
+		rootSvg.getWidth().getBaseVal().newValueSpecifiedUnits(Unit.PCT, 100);
+		rootSvg.getHeight().getBaseVal().newValueSpecifiedUnits(Unit.PCT, 100);
 		tileZone = new TargetMatrix("tiles", colCount, rowCount, tileZoneX + connectorWidth, tileZoneY + connectorHeight, tileWidth, tileHeight, style.tileShadow(), style.tileShadowSelected());
 		assemblyZone = new TargetMatrix("assembly", colCount, rowCount, puzzleX, puzzleY, pieceWidth, pieceHeight, style.assemblyShadow(), style.assemblyShadowSelected());
 

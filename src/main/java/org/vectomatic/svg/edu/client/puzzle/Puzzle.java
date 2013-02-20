@@ -23,7 +23,6 @@ import java.util.List;
 import org.vectomatic.dom.svg.OMNode;
 import org.vectomatic.dom.svg.OMSVGClipPathElement;
 import org.vectomatic.dom.svg.OMSVGDefsElement;
-import org.vectomatic.dom.svg.OMSVGDocument;
 import org.vectomatic.dom.svg.OMSVGGElement;
 import org.vectomatic.dom.svg.OMSVGMatrix;
 import org.vectomatic.dom.svg.OMSVGPathElement;
@@ -34,7 +33,6 @@ import org.vectomatic.dom.svg.OMSVGRectElement;
 import org.vectomatic.dom.svg.OMSVGSVGElement;
 import org.vectomatic.dom.svg.OMSVGTransform;
 import org.vectomatic.dom.svg.OMSVGUseElement;
-import org.vectomatic.dom.svg.utils.OMSVGParser;
 import org.vectomatic.dom.svg.utils.SVGConstants;
 
 import com.google.gwt.core.client.GWT;
@@ -448,12 +446,11 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		this.rowCount = rowCount;
 		
 		// Create the puzzle geometry
-		OMSVGDocument document = OMSVGParser.currentDocument();
-		rootSvg = document.createSVGSVGElement();
+		rootSvg = new OMSVGSVGElement();
 		rootSvg.addMouseDownHandler(this);
 		rootSvg.addMouseMoveHandler(this);
 		rootSvg.addMouseUpHandler(this);
-		OMSVGDefsElement defs = document.createSVGDefsElement();
+		OMSVGDefsElement defs = new OMSVGDefsElement();
 		rootSvg.appendChild(defs);
 
 		// Compute basic metrics
@@ -530,26 +527,26 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		//  <rect id="assemblyContent2"/>
 		// <g>
 		// </g>
-		OMSVGGElement assemblyGroup = document.createSVGGElement();
+		OMSVGGElement assemblyGroup = new OMSVGGElement();
 		
-		OMSVGRectElement assemblyBorder = document.createSVGRectElement(assemblyZoneX, assemblyZoneY, assemblyZoneWidth, assemblyZoneHeight, borderCornerWidth, borderCornerHeight);
+		OMSVGRectElement assemblyBorder = new OMSVGRectElement(assemblyZoneX, assemblyZoneY, assemblyZoneWidth, assemblyZoneHeight, borderCornerWidth, borderCornerHeight);
 		assemblyBorder.setClassNameBaseVal(style.assemblyBorder());
-		OMSVGRectElement assemblyContent1 = document.createSVGRectElement(puzzleX, puzzleY, width, height, 0, 0);
+		OMSVGRectElement assemblyContent1 = new OMSVGRectElement(puzzleX, puzzleY, width, height, 0, 0);
 		assemblyContent1.setClassNameBaseVal(style.assemblyContent1());
-		OMSVGGElement assemblyShadows = document.createSVGGElement();
-		OMSVGRectElement assemblyContent2 = document.createSVGRectElement(puzzleX, puzzleY, width, height, 0, 0);
+		OMSVGGElement assemblyShadows = new OMSVGGElement();
+		OMSVGRectElement assemblyContent2 = new OMSVGRectElement(puzzleX, puzzleY, width, height, 0, 0);
 		assemblyContent2.setClassNameBaseVal(style.assemblyContent2());
 		assemblyGroup.appendChild(assemblyBorder);
 		assemblyGroup.appendChild(assemblyContent1);
 		assemblyGroup.appendChild(assemblyShadows);
 		assemblyGroup.appendChild(assemblyContent2);
 		rootSvg.appendChild(assemblyGroup);
-		OMSVGGElement tileShadows = document.createSVGGElement();
+		OMSVGGElement tileShadows = new OMSVGGElement();
 		rootSvg.appendChild(tileShadows);
 		
 		// Copy the source SVG in a dedicated group inside
 		// the defs
-		OMSVGGElement imgGroup = document.createSVGGElement();
+		OMSVGGElement imgGroup = new OMSVGGElement();
 		imgGroup.setId(ID_IMAGE);
 		for (OMNode node : srcSvg.getChildNodes()) {
 			imgGroup.appendChild(node.cloneNode(true));
@@ -585,16 +582,16 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 				// </g>
 				Piece piece = tileZone.getPiece(i, j);
 
-				OMSVGGElement pieceDef = document.createSVGGElement();
+				OMSVGGElement pieceDef = new OMSVGGElement();
 				String idPiece = ID_PIECE + piece.getId();
 				pieceDef.setId(idPiece);
 				
 				String idPieceClip = ID_PIECE_CLIP + piece.getId();
-				OMSVGClipPathElement pieceClipDef = document.createSVGClipPathElement();
+				OMSVGClipPathElement pieceClipDef = new OMSVGClipPathElement();
 				pieceClipDef.setId(idPieceClip);
 				
 				String idPiecePath= ID_PIECE_PATH + piece.getId();
-				OMSVGPathElement piecePath = document.createSVGPathElement();
+				OMSVGPathElement piecePath = new OMSVGPathElement();
 				piecePath.setId(idPiecePath);
 				OMSVGPathSegList segs = piecePath.getPathSegList();
 				segs.appendItem(piecePath.createSVGPathSegMovetoAbs(0f, 0f));
@@ -615,28 +612,28 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 				}
 				segs.appendItem(piecePath.createSVGPathSegClosePath());
 
-				OMSVGGElement pieceClipPath = document.createSVGGElement();
+				OMSVGGElement pieceClipPath = new OMSVGGElement();
 				pieceClipPath.getStyle().setSVGProperty(SVGConstants.CSS_CLIP_PATH_PROPERTY, "url(#" + idPieceClip + ")");
 				
-				OMSVGGElement pieceTransform = document.createSVGGElement();
+				OMSVGGElement pieceTransform = new OMSVGGElement();
 				OMSVGTransform xform = rootSvg.createSVGTransform();
 				xform.setTranslate(
 						viewBox.getX() - i * pieceWidth, 
 						viewBox.getY() - j * pieceHeight);
 				pieceTransform.getTransform().getBaseVal().appendItem(xform);
 
-				OMSVGUseElement pieceContent = document.createSVGUseElement();
+				OMSVGUseElement pieceContent = new OMSVGUseElement();
 				pieceContent.getX().getBaseVal().setValue(viewBox.getX());
 				pieceContent.getY().getBaseVal().setValue(viewBox.getY());
 				pieceContent.getHref().setBaseVal("#" + idPiecePath);
 				pieceContent.setClassNameBaseVal(style.pieceContent());
 
-				OMSVGUseElement imgUse = document.createSVGUseElement();
+				OMSVGUseElement imgUse = new OMSVGUseElement();
 				imgUse.getX().getBaseVal().setValue(viewBox.getX());
 				imgUse.getY().getBaseVal().setValue(viewBox.getY());
 				imgUse.getHref().setBaseVal("#" + ID_IMAGE);
 				
-				OMSVGUseElement pieceBorder = document.createSVGUseElement();
+				OMSVGUseElement pieceBorder = new OMSVGUseElement();
 				pieceBorder.getX().getBaseVal().setValue(viewBox.getX());
 				pieceBorder.getY().getBaseVal().setValue(viewBox.getY());
 				pieceBorder.getHref().setBaseVal("#" + idPiecePath);
@@ -652,12 +649,12 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 				defs.appendChild(pieceDef);
 				
 				// Create the hints
-				OMSVGUseElement tileShadow = document.createSVGUseElement();
+				OMSVGUseElement tileShadow = new OMSVGUseElement();
 				tileShadow.getHref().setBaseVal("#" + idPiecePath);
 				tileShadow.setClassNameBaseVal(style.tileShadow());
 				piece.shadow = tileShadow;
 				tileShadows.appendChild(tileShadow);
-				OMSVGUseElement assemblyShadow = document.createSVGUseElement();
+				OMSVGUseElement assemblyShadow = new OMSVGUseElement();
 				Target assemblyTarget = assemblyZone.getTarget(i,j);
 				assemblyShadow.getHref().setBaseVal("#" + idPiecePath);
 				assemblyShadows.appendChild(assemblyShadow);
@@ -666,7 +663,7 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 
 				// Create the piece
 				// <use x="130" y="260" xlink:href="#pieceX-Y"/>
-				OMSVGUseElement geometry = document.createSVGUseElement();
+				OMSVGUseElement geometry = new OMSVGUseElement();
 				geometry.setClassNameBaseVal(style.piece());
 				geometry.getHref().setBaseVal("#" + idPiece);
 				rootSvg.appendChild(geometry);

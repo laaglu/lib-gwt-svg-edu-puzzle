@@ -442,6 +442,9 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 	Target destTarget;
 	
 	public Puzzle(OMSVGSVGElement srcSvg, int colCount, int rowCount) {
+		int windowWidth = Window.getClientWidth();
+		int windowHeight = Window.getClientHeight();
+		boolean landscape = windowWidth >= windowHeight;
 		this.colCount = colCount;
 		this.rowCount = rowCount;
 		
@@ -471,14 +474,14 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		float tileZoneHeight = rowCount * tileHeight;
 		float assemblyZoneWidth = borderWidth * 2 + width;
 		float assemblyZoneHeight = borderHeight * 2 + height;
-		float assemblyZoneX = 0f;
-		float assemblyZoneY = 0.5f * (tileZoneHeight - assemblyZoneHeight);
-		tileZoneX = assemblyZoneWidth + MARGIN_PCT * width;
-		tileZoneY = 0f;
+		float assemblyZoneX = landscape ? 0f : 0.5f * (tileZoneWidth - assemblyZoneWidth);
+		float assemblyZoneY = landscape ? 0.5f * (tileZoneHeight - assemblyZoneHeight) : 0;
+		tileZoneX = landscape ? assemblyZoneWidth + MARGIN_PCT * width : 0f;
+		tileZoneY = landscape ? 0f : assemblyZoneHeight + MARGIN_PCT * height;
 		puzzleX = assemblyZoneX + borderWidth;
 		puzzleY = assemblyZoneY + borderHeight;
-		float totalWidth = tileZoneX + tileZoneWidth;
-		float totalHeight = tileZoneHeight;
+		float totalWidth = landscape ? tileZoneX + tileZoneWidth : tileZoneWidth;
+		float totalHeight = landscape ? tileZoneHeight : tileZoneY + tileZoneHeight;
 		rootSvg.setViewBox(0, 0, totalWidth, totalHeight);
 		rootSvg.getWidth().getBaseVal().newValueSpecifiedUnits(Unit.PCT, 100);
 		rootSvg.getHeight().getBaseVal().newValueSpecifiedUnits(Unit.PCT, 100);
@@ -512,11 +515,11 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		}
 		//
 		// Create the puzzle game layout:
-		// + at the left, the assemblyGroup (where the player assembles the pieces).
+		// + at the left or top, the assemblyGroup (where the player assembles the pieces).
 		//   The assemblyGroup itself consists in a assemblyBorder, and an
 		//   assemblyZone (which contains the assembled pieces). Optionally and
 		//   assemblyHint can be displayed (show the contour of the pieces)
-		// + at the right, the tileZone (where the pieces are randomly positioned
+		// + at the right or bottom, the tileZone (where the pieces are randomly positioned
 		//   on a grid of tiles)
 		// <g id="assemblyGroup">
 		//  <rect id="assemblyBorder" rx="" ry="">

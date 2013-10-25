@@ -22,6 +22,5 @@ import com.google.gwt.i18n.client.Constants;
 
 public interface PuzzleConstants extends Constants {
 	public static final PuzzleConstants INSTANCE = GWT.create(PuzzleConstants.class);
-	public String level();
 	public String congratulations();
 }

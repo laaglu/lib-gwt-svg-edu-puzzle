@@ -113,6 +113,17 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 				geometry.getY().getBaseVal().setValue(p.getY());
 			}
 		}
+		public void doLayout() {
+			OMSVGPoint p = getPosition();
+			if (piece != null) {
+				setPosition(p);
+			}
+			if (shadow != null) {
+				shadow.getX().getBaseVal().setValue(p.getX());
+				shadow.getY().getBaseVal().setValue(p.getY());
+			}
+		}
+		
 		@Override
 		public String toString() {
 			StringBuilder buffer = new StringBuilder();
@@ -157,13 +168,9 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		 */
 		private String selectedShadowClass;
 		
-		TargetMatrix(String id, int colCount, int rowCount, float x, float y, float w, float h, String shadowClass, String selectedShadowClass) {
+		TargetMatrix(String id, String shadowClass, String selectedShadowClass) {
 			targets = new Target[colCount][];
 			this.id = id;
-			this.x = x;
-			this.y = y;
-			this.w = w;
-			this.h = h;
 			this.shadowClass = shadowClass;
 			this.selectedShadowClass = selectedShadowClass;
 			for (int i = 0; i < colCount; i++) {
@@ -185,6 +192,17 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		public Target getTarget(MouseEvent<? extends EventHandler> e) {
 			OMSVGPoint p = getCoordinates(e).substract(rootSvg.createSVGPoint(x, y)).product(rootSvg.createSVGPoint(1f / w, 1f / h)).floor();
 			return p.getX() >= 0 && p.getX() < colCount && p.getY() >= 0 && p.getY() < rowCount ? targets[(int)p.getX()][(int)p.getY()] : null;
+		}
+		public void doLayout(float x, float y, float w, float h) {
+			this.x = x;
+			this.y = y;
+			this.w = w;
+			this.h = h;
+			for (int i = 0; i < colCount; i++) {
+				for (int j = 0; j < rowCount; j++) {
+					targets[i][j].doLayout();
+				}
+			}
 		}
 	}
 	
@@ -382,6 +400,10 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 	 */
 	private List<Piece> pieceList;
 	/**
+	 * The original puzzle SVG Image
+	 */
+	OMSVGSVGElement srcSvg;
+	/**
 	 * The root element of the SVG DOM hierarchy
 	 */
 	OMSVGSVGElement rootSvg;
@@ -394,6 +416,18 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 	 */
 	private TargetMatrix assemblyZone;
 	/**
+	 * The border around the assembly zone
+	 */
+	private OMSVGRectElement assemblyBorder;
+	/**
+	 * The content rectangle #1 in the assembly zone
+	 */
+	private OMSVGRectElement assemblyContent1;
+	/**
+	 * The content rectangle #2 in the assembly zone
+	 */
+	private OMSVGRectElement assemblyContent2;
+	/**
 	 * The number of pieces per column
 	 */
 	private int colCount;
@@ -401,14 +435,6 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 	 * The number of pieces per row
 	 */
 	private int rowCount;
-	/**
-	 * The dimension of a piece
-	 */
-	float pieceWidth, pieceHeight;
-	/**
-	 * The dimension of a piece connector
-	 */
-	float connectorWidth, connectorHeight;
 	/**
 	 * The dimension of a tile in the tile zone
 	 */
@@ -423,6 +449,18 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 	 * puzzle in the assembly zone
 	 */
 	float puzzleX, puzzleY;
+	/**
+	 * Size of puzzle svg in svg coordinates
+	 */
+	float srcWidth, srcHeight;
+	/**
+	 * Size of a puzzle piece in puzzle svg coordinates
+	 */
+	float pieceWidth, pieceHeight;
+	/**
+	 * Size of a puzzle connector in puzzle svg coordinates
+	 */
+	float connectorWidth, connectorHeight;
 	/**
 	 * True if a drag and drop session is taking place
 	 */
@@ -440,14 +478,27 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 	 * Drag and drop target
 	 */
 	Target destTarget;
-	
+	/**
+	 * True if the game is displayed in landscape mode
+	 */
+	private boolean landscape;
+
 	public Puzzle(OMSVGSVGElement srcSvg, int colCount, int rowCount) {
-		int windowWidth = Window.getClientWidth();
-		int windowHeight = Window.getClientHeight();
-		boolean landscape = windowWidth >= windowHeight;
+		this.srcSvg = srcSvg;
 		this.colCount = colCount;
 		this.rowCount = rowCount;
-		
+
+		// Compute basic metrics
+		OMSVGRect viewBox = srcSvg.getViewBox().getBaseVal();
+		srcWidth = viewBox.getWidth();
+		srcHeight = viewBox.getHeight();
+		pieceWidth = srcWidth / colCount; // The dimension of a piece
+		pieceHeight = srcHeight / rowCount;
+		connectorWidth = CONNECTOR_PCT * pieceWidth; // The dimension of a piece connector
+		connectorHeight = CONNECTOR_PCT * pieceHeight;
+		tileWidth = (CONNECTOR_PCT * 2 + 1.01f) * pieceWidth;
+		tileHeight = (CONNECTOR_PCT * 2 + 1.01f) * pieceHeight;
+
 		// Create the puzzle geometry
 		rootSvg = new OMSVGSVGElement();
 		rootSvg.addMouseDownHandler(this);
@@ -456,37 +507,9 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		OMSVGDefsElement defs = new OMSVGDefsElement();
 		rootSvg.appendChild(defs);
 
-		// Compute basic metrics
-		OMSVGRect viewBox = srcSvg.getViewBox().getBaseVal();
-		float width = viewBox.getWidth();
-		float height = viewBox.getHeight();
-		pieceWidth = width / colCount;
-		pieceHeight = height / rowCount;
-		connectorWidth = CONNECTOR_PCT * pieceWidth;
-		connectorHeight = CONNECTOR_PCT * pieceHeight;
-		float borderWidth = ASSEMBLY_BORDER_SIZE_PCT * width;
-		float borderHeight = ASSEMBLY_BORDER_SIZE_PCT * height;
-		float borderCornerWidth = ASSEMBLY_BORDER_CORNER_PCT * width;
-		float borderCornerHeight = ASSEMBLY_BORDER_CORNER_PCT * height;
-		tileWidth = (CONNECTOR_PCT * 2 + 1.01f) * pieceWidth;
-		tileHeight = (CONNECTOR_PCT * 2 + 1.01f) * pieceHeight;
-		float tileZoneWidth = colCount * tileWidth;
-		float tileZoneHeight = rowCount * tileHeight;
-		float assemblyZoneWidth = borderWidth * 2 + width;
-		float assemblyZoneHeight = borderHeight * 2 + height;
-		float assemblyZoneX = landscape ? 0f : 0.5f * (tileZoneWidth - assemblyZoneWidth);
-		float assemblyZoneY = landscape ? 0.5f * (tileZoneHeight - assemblyZoneHeight) : 0;
-		tileZoneX = landscape ? assemblyZoneWidth + MARGIN_PCT * width : 0f;
-		tileZoneY = landscape ? 0f : assemblyZoneHeight + MARGIN_PCT * height;
-		puzzleX = assemblyZoneX + borderWidth;
-		puzzleY = assemblyZoneY + borderHeight;
-		float totalWidth = landscape ? tileZoneX + tileZoneWidth : tileZoneWidth;
-		float totalHeight = landscape ? tileZoneHeight : tileZoneY + tileZoneHeight;
-		rootSvg.setViewBox(0, 0, totalWidth, totalHeight);
-		rootSvg.getWidth().getBaseVal().newValueSpecifiedUnits(Unit.PCT, 100);
-		rootSvg.getHeight().getBaseVal().newValueSpecifiedUnits(Unit.PCT, 100);
-		tileZone = new TargetMatrix("tiles", colCount, rowCount, tileZoneX + connectorWidth, tileZoneY + connectorHeight, tileWidth, tileHeight, style.tileShadow(), style.tileShadowSelected());
-		assemblyZone = new TargetMatrix("assembly", colCount, rowCount, puzzleX, puzzleY, pieceWidth, pieceHeight, style.assemblyShadow(), style.assemblyShadowSelected());
+		// Create main tile zones
+		tileZone = new TargetMatrix("tiles", style.tileShadow(), style.tileShadowSelected());
+		assemblyZone = new TargetMatrix("assembly", style.assemblyShadow(), style.assemblyShadowSelected());
 
 		// Create the puzzle pieces
 		pieceList = new ArrayList<Piece>();
@@ -531,13 +554,14 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 		// <g>
 		// </g>
 		OMSVGGElement assemblyGroup = new OMSVGGElement();
-		
-		OMSVGRectElement assemblyBorder = new OMSVGRectElement(assemblyZoneX, assemblyZoneY, assemblyZoneWidth, assemblyZoneHeight, borderCornerWidth, borderCornerHeight);
+
+
+		assemblyBorder = new OMSVGRectElement();
 		assemblyBorder.setClassNameBaseVal(style.assemblyBorder());
-		OMSVGRectElement assemblyContent1 = new OMSVGRectElement(puzzleX, puzzleY, width, height, 0, 0);
+		assemblyContent1 = new OMSVGRectElement();
 		assemblyContent1.setClassNameBaseVal(style.assemblyContent1());
 		OMSVGGElement assemblyShadows = new OMSVGGElement();
-		OMSVGRectElement assemblyContent2 = new OMSVGRectElement(puzzleX, puzzleY, width, height, 0, 0);
+		assemblyContent2 = new OMSVGRectElement();
 		assemblyContent2.setClassNameBaseVal(style.assemblyContent2());
 		assemblyGroup.appendChild(assemblyBorder);
 		assemblyGroup.appendChild(assemblyContent1);
@@ -673,6 +697,58 @@ public class Puzzle implements MouseDownHandler, MouseMoveHandler, MouseUpHandle
 				piece.geometry = geometry;
 			}
 		}
+		doLayout();
+	}
+	
+	public void doLayout() {
+		int windowWidth = Window.getClientWidth();
+		int windowHeight = Window.getClientHeight();
+		landscape = windowWidth >= windowHeight;
+
+		// Compute basic metrics
+		float borderWidth = ASSEMBLY_BORDER_SIZE_PCT * srcWidth;
+		float borderHeight = ASSEMBLY_BORDER_SIZE_PCT * srcHeight;
+		float borderCornerWidth = ASSEMBLY_BORDER_CORNER_PCT * srcWidth;
+		float borderCornerHeight = ASSEMBLY_BORDER_CORNER_PCT * srcHeight;
+		float tileZoneWidth = colCount * tileWidth;
+		float tileZoneHeight = rowCount * tileHeight;
+		float assemblyZoneWidth = borderWidth * 2 + srcWidth;
+		float assemblyZoneHeight = borderHeight * 2 + srcHeight;
+		float assemblyZoneX = landscape ? 0f : 0.5f * (tileZoneWidth - assemblyZoneWidth);
+		float assemblyZoneY = landscape ? 0.5f * (tileZoneHeight - assemblyZoneHeight) : 0;
+		tileZoneX = landscape ? assemblyZoneWidth + MARGIN_PCT * srcWidth : 0f;
+		tileZoneY = landscape ? 0f : assemblyZoneHeight + MARGIN_PCT * srcHeight;
+		puzzleX = assemblyZoneX + borderWidth;
+		puzzleY = assemblyZoneY + borderHeight;
+		float totalWidth = landscape ? tileZoneX + tileZoneWidth : tileZoneWidth;
+		float totalHeight = landscape ? tileZoneHeight : tileZoneY + tileZoneHeight;
+		rootSvg.setViewBox(0, 0, totalWidth, totalHeight);
+		rootSvg.getWidth().getBaseVal().newValueSpecifiedUnits(Unit.PCT, 100);
+		rootSvg.getHeight().getBaseVal().newValueSpecifiedUnits(Unit.PCT, 100);
+		
+		assemblyBorder.getX().getBaseVal().setValue(assemblyZoneX);
+		assemblyBorder.getY().getBaseVal().setValue(assemblyZoneY);
+		assemblyBorder.getWidth().getBaseVal().setValue(assemblyZoneWidth);
+		assemblyBorder.getHeight().getBaseVal().setValue(assemblyZoneHeight);
+		assemblyBorder.getRx().getBaseVal().setValue(borderCornerWidth);
+		assemblyBorder.getRy().getBaseVal().setValue(borderCornerHeight);
+		
+
+		assemblyContent1.getX().getBaseVal().setValue(puzzleX);
+		assemblyContent1.getY().getBaseVal().setValue(puzzleY);
+		assemblyContent1.getWidth().getBaseVal().setValue(srcWidth);
+		assemblyContent1.getHeight().getBaseVal().setValue(srcHeight);
+
+		assemblyContent2.getX().getBaseVal().setValue(puzzleX);
+		assemblyContent2.getY().getBaseVal().setValue(puzzleY);
+		assemblyContent2.getWidth().getBaseVal().setValue(srcWidth);
+		assemblyContent2.getHeight().getBaseVal().setValue(srcHeight);
+		tileZone.doLayout(tileZoneX + connectorWidth, tileZoneY + connectorHeight, tileWidth, tileHeight);
+		assemblyZone.doLayout(puzzleX, puzzleY, pieceWidth, pieceHeight);
+	}
+	
+	public boolean isLandscape() {
+		return landscape;
 	}
 
 	public OMSVGSVGElement getSvgElement() {

@@ -24,13 +24,17 @@ import org.vectomatic.dom.svg.utils.AsyncXmlLoader;
 import org.vectomatic.dom.svg.utils.AsyncXmlLoaderCallback;
 import org.vectomatic.svg.edu.client.commons.CommonBundle;
 import org.vectomatic.svg.edu.client.commons.CommonConstants;
+import org.vectomatic.svg.edu.client.commons.DifficultyPicker;
 import org.vectomatic.svg.edu.client.commons.LicenseBox;
+import org.vectomatic.svg.edu.client.commons.Utils;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.StyleInjector;
-import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.logical.shared.ResizeEvent;
+import com.google.gwt.event.logical.shared.ResizeHandler;
+import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
@@ -38,7 +42,6 @@ import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.Widget;
 
@@ -51,8 +54,6 @@ public class PuzzleMain implements EntryPoint {
 	}
 	private static PuzzleMainBinder mainBinder = GWT.create(PuzzleMainBinder.class);
 
-	
-	@UiField(provided=true)
 	PuzzleBundle resources = PuzzleBundle.INSTANCE;
 	@UiField(provided=true)
 	CommonBundle common = CommonBundle.INSTANCE;
@@ -64,7 +65,7 @@ public class PuzzleMain implements EntryPoint {
 	@UiField
 	HTML svgContainer;
 	@UiField
-	ListBox levelList;
+	DifficultyPicker difficultyPicker;
 	@UiField
 	FlowPanel navigationPanel;
 	Widget menuWidget;
@@ -99,7 +100,12 @@ public class PuzzleMain implements EntryPoint {
 	 */
 	@Override
 	public void onModuleLoad() {
+		// Inject styles from the common modules, taking into account media queries
 		common.css().ensureInjected();
+		common.mediaQueries().ensureInjected();
+		Utils.injectMediaQuery("(orientation:landscape)", common.mediaQueriesLandscape());
+		Utils.injectMediaQuery("(orientation:portrait)", common.mediaQueriesPortrait());
+
 		StyleInjector.inject(style.getText(), true);
 		
 		// Load the game levels
@@ -112,10 +118,8 @@ public class PuzzleMain implements EntryPoint {
 			menuWidget = LicenseBox.createAboutButton();
 		}
 		navigationPanel.insert(menuWidget, 0);
-		for (int i = 1; i <= dimensions.length; i++) {
-			levelList.addItem(PuzzleConstants.INSTANCE.level() + " " + i);
-		}
-		levelList.setSelectedIndex(0);
+
+		// Load the specified level directly if specified in the URL query
 		String levelParam = Window.Location.getParameter("level");
 		if (levelParam != null) {
 			try {
@@ -129,6 +133,18 @@ public class PuzzleMain implements EntryPoint {
 		}
 		RootPanel.get(CommonConstants.ID_UIROOT).add(panel);
 		readPuzzleDef();
+		Window.addResizeHandler(new ResizeHandler() {
+			
+			@Override
+			public void onResize(ResizeEvent event) {
+				int windowWidth = Window.getClientWidth();
+				int windowHeight = Window.getClientHeight();
+				boolean landscape = windowWidth >= windowHeight;
+				if (landscape != puzzle.isLandscape()) {
+					puzzle.doLayout();
+				}
+			}
+		});
 	}
 
 	@UiHandler("prevButton")
@@ -148,13 +164,13 @@ public class PuzzleMain implements EntryPoint {
 		readPuzzleDef();
 	}
 
-	@UiHandler("levelList")
-	public void levelChange(ChangeEvent event) {
+	@UiHandler("difficultyPicker")
+	public void levelChange(ValueChangeEvent<Integer> event) {
 		generate();
 	}
 	
 	private void generate() {
-		int[] dimension = dimensions[levelList.getSelectedIndex()];
+		int[] dimension = dimensions[difficultyPicker.getDifficulty()];
 		puzzle = new Puzzle(srcSvg, dimension[0], dimension[1]);
 		puzzle.shuffle();
 		OMSVGSVGElement rootSvg = puzzle.getSvgElement();
@@ -174,7 +190,7 @@ public class PuzzleMain implements EntryPoint {
 	}
 
 	public void readPuzzleDef() {
-		String url = GWT.getModuleBaseURL() + DIR + "/" + levels[level];
+		String url = getLevelUrl();
 		loader.loadResource(url, new AsyncXmlLoaderCallback() {
 			@Override
 			public void onError(String resourceName, Throwable error) {

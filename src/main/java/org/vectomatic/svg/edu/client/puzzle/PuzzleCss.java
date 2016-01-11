@@ -18,6 +18,7 @@
 package org.vectomatic.svg.edu.client.puzzle;
 
 import com.google.gwt.resources.client.CssResource;
+import com.google.gwt.resources.client.CssResource.ClassName;
 
 /**
  * CSS declarations for the puzzle game
@@ -43,5 +44,7 @@ public interface PuzzleCss extends CssResource {
 	public String tileShadow();
 	@ClassName("tile-shadow-selected")
 	public String tileShadowSelected();
+	@ClassName("root-svg")
+	String rootSvg();
 
 }

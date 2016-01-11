@@ -174,7 +174,8 @@ public class PuzzleMain implements EntryPoint {
 		puzzle = new Puzzle(srcSvg, dimension[0], dimension[1]);
 		puzzle.shuffle();
 		OMSVGSVGElement rootSvg = puzzle.getSvgElement();
-		
+		rootSvg.addClassNameBaseVal(style.rootSvg());
+
 		// Add the SVG to the HTML page
 		Element div = svgContainer.getElement();
 		if (puzzleSvg != null) {

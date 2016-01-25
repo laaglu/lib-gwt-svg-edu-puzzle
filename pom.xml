@@ -18,9 +18,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<url>scm:git:git@github.com:laaglu/lib-gwt-svg-edu-puzzle.git</url>
-		<connection>scm:git:git@github.com:laaglu/lib-gwt-svg-edu-puzzle.git</connection>
-		<developerConnection>scm:git:git@github.com:laaglu/lib-gwt-svg-edu-puzzle.git</developerConnection>
+		<url>scm:git:git://git/lib-gwt-svg-edu-puzzle.git</url>
+		<connection>scm:git:git://git/lib-gwt-svg-edu-puzzle.git</connection>
+		<developerConnection>scm:git:git://git/lib-gwt-svg-edu-puzzle.git</developerConnection>
 	  <tag>HEAD</tag>
   </scm>
 	<dependencies>

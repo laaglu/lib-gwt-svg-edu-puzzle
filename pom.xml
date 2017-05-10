@@ -7,7 +7,7 @@
 	</parent>
 	<artifactId>lib-gwt-svg-edu-puzzle</artifactId>
 	<packaging>war</packaging>
-	<version>0.3.20-SNAPSHOT</version>
+	<version>0.3.20</version>
 	<name>lib-gwt-svg-edu-puzzle</name>
 	<description>Educational game for kindergarten children, based on lib-gwt-svg. Puzzle is an SVG puzzle game. You must drag and drop pieces to the proper location to form an image.</description>
 	<url>http://www.vectomatic.org/mvn-sites/lib-gwt-svg-edu-puzzle</url>
@@ -21,7 +21,7 @@
 		<url>scm:git:git://git/lib-gwt-svg-edu-puzzle.git</url>
 		<connection>scm:git:git://git/lib-gwt-svg-edu-puzzle.git</connection>
 		<developerConnection>scm:git:git://git/lib-gwt-svg-edu-puzzle.git</developerConnection>
-	  <tag>HEAD</tag>
+	  <tag>0.3.20</tag>
   </scm>
 	<dependencies>
 		<dependency>
